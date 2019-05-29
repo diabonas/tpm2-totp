@@ -5,6 +5,13 @@ compiler:
 
 dist: xenial
 
+cache:
+  directories:
+  - openssl
+  - ibmtpm
+  - tpm2-tss
+  - tpm2-tools
+
 env:
   matrix:
   - OPENSSL_BRANCH=OpenSSL_1_0_2-stable
@@ -32,10 +39,9 @@ addons:
     - fakeroot
 
 install:
-  - git clean -xdf
   - mkdir -p installdir/usr/local/bin
 # OpenSSL 1.0.2 / 1.1.0
-  - git clone --branch $OPENSSL_BRANCH --depth=1 https://github.com/openssl/openssl.git
+  - git clone --branch $OPENSSL_BRANCH --depth=1 https://github.com/openssl/openssl.git || (cd openssl; git pull)
   - pushd openssl
   - ./config --prefix=/usr/local --openssldir=/usr/local/openssl shared
   - make -j$(nproc)
@@ -51,7 +57,6 @@ install:
   - wget --no-check-certificate https://download.01.org/tpm2/ibmtpm974.tar.gz
     # we skip failing cert check and use the sha256sum instead
   - sha256sum ibmtpm974.tar.gz | grep -q ^8e45d86129a0adb95fee4cee51f4b1e5b2d81ed3e55af875df53f98f39eb7ad7 || travis_terminate 1
-  - mkdir ibmtpm
   - tar axf ibmtpm974.tar.gz -C ibmtpm
   - make -C ibmtpm/src -j$(nproc)
   - cp ibmtpm/src/tpm_server installdir/usr/local/bin
@@ -63,7 +68,7 @@ install:
   - tar xJf autoconf-archive-2017.09.28.tar.xz
   - cp autoconf-archive-2017.09.28/m4/ax_code_coverage.m4 m4/
 # TPM2-TSS
-  - git clone --depth=1 -b 2.1.0 https://github.com/tpm2-software/tpm2-tss.git
+  - git clone --depth=1 -b 2.1.0 https://github.com/tpm2-software/tpm2-tss.git || (cd tpm2-tss; git pull)
   - pushd tpm2-tss
   - cp ../autoconf-archive-2017.09.28/m4/ax_code_coverage.m4 m4/
   - ./bootstrap
@@ -73,7 +78,7 @@ install:
   - rm ${PWD}/../installdir/usr/local/lib/*.la
   - popd
 # tpm2-tools
-  - git clone --depth=1 -b 3.X https://github.com/tpm2-software/tpm2-tools.git
+  - git clone --depth=1 -b 3.X https://github.com/tpm2-software/tpm2-tools.git || (cd tpm2-tools; git pull)
   - pushd tpm2-tools
   - mkdir m4 || true
   - cp ../autoconf-archive-2017.09.28/m4/ax_code_coverage.m4 m4/
